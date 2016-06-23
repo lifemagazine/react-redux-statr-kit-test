@@ -1,36 +1,26 @@
 // We only need to import the modules necessary for initial render
 import CoreLayout from '../layouts/CoreLayout/CoreLayout'
-import Home from './Home'
-import CounterRoute from './Counter'
+import HomeRoute from './Home'
+import UserListRoute from './UserList'
+import LoginRoute from './Login'
+import RegisterRoute from './Register'
+import LogoutRoute from './Logout'
 
 /*  Note: Instead of using JSX, we recommend using react-router
     PlainRoute objects to build route definitions.   */
 
-export const createRoutes = (store) => ({
+export const createRoutes = (store) => (
+{
   path: '/',
   component: CoreLayout,
-  indexRoute: Home,
+  indexRoute: { onEnter: (nextState, replace) => replace('/home') },
   childRoutes: [
-    CounterRoute(store)
+    HomeRoute(store),
+    UserListRoute(store),
+    LoginRoute(store),
+    RegisterRoute(store),
+    LogoutRoute(store)
   ]
 })
-
-/*  Note: childRoutes can be chunked or otherwise loaded programmatically
-    using getChildRoutes with the following signature:
-
-    getChildRoutes (location, cb) {
-      require.ensure([], (require) => {
-        cb(null, [
-          // Remove imports!
-          require('./Counter').default(store)
-        ])
-      })
-    }
-
-    However, this is not necessary for code-splitting! It simply provides
-    an API for async route definitions. Your code splitting should occur
-    inside the route `getComponent` function, since it is only invoked
-    when the route exists and matches.
-*/
 
 export default createRoutes

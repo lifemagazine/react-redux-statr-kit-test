@@ -1,5 +1,8 @@
 import Koa from 'koa'
+import route from 'koa-route'
+import koaBody from 'koa-body'
 import convert from 'koa-convert'
+import session from 'koa-session'
 import webpack from 'webpack'
 import webpackConfig from '../build/webpack.config'
 import historyApiFallback from 'koa-connect-history-api-fallback'
@@ -7,12 +10,29 @@ import serve from 'koa-static'
 import proxy from 'koa-proxy'
 import _debug from 'debug'
 import config from '../config'
+import users from './utils/utilities';
 import webpackDevMiddleware from './middleware/webpack-dev'
 import webpackHMRMiddleware from './middleware/webpack-hmr'
+
+/*import mongoose from 'mongoose'
+
+
+var db = mongoose.connection;
+db.on('error', console.error);
+db.once('open', function() {
+  console.log("Connected to mongod server");
+});
+
+mongoose.connect('mongodb://localhost/mongodb_test');*/
+
+
 
 const debug = _debug('app:server')
 const paths = config.utils_paths
 const app = new Koa()
+
+app.keys = ['some secret hurr'];
+app.use(session(app));
 
 // Enable koa-proxy if it has been enabled in the config.
 if (config.proxy && config.proxy.enabled) {
@@ -57,5 +77,14 @@ if (config.env === 'development') {
   // server in production.
   app.use(convert(serve(paths.dist())))
 }
+
+app.use(koaBody({formidable:{uploadDir: __dirname}}));
+
+app.use(route.post('/login', users.login));
+app.use(route.post('/logout', users.logout));
+app.use(route.post('/register', users.register));
+app.use(route.get('/users', users.list));
+app.use(route.post('/users/:userid', users.modify));
+
 
 export default app

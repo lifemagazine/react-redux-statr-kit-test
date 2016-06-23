@@ -1,0 +1,80 @@
+import config from '../config';
+import user from '../users/index';
+
+module.exports.login = function*(next) {
+	console.log(this.request.body);
+	let userid = this.request.body.userid;
+	let password = this.request.body.password;
+	let itself = this;
+
+	user.findById(userid, function(err, profile) {
+		if (profile) {
+			user.passwordCheck(password, profile.password, profile.salt, profile.work, function(err,isAuth){
+				if (isAuth) {
+					console.log('login ok');
+					itself.session.isAuthenticated = true;
+					itself.session.role = profile.role;
+					// itself.status = 200;
+					itself.body = JSON.stringify({status: 200, role: profile.role});
+				} else {
+					console.log('Wrong Password');
+					// itself.status = 400;
+					itself.body = JSON.stringify({status: 400, role: 100});
+				}
+			});
+		} else {
+			console.log('Invalid userid');
+			// itself.status = 400;
+			itself.body = JSON.stringify({status: 400, role: 100});
+		}
+	});
+};
+module.exports.logout = function*() {
+	console.log('logout!');
+	this.session = null;
+	this.body = 'logout';
+};
+module.exports.register = function*(next) {
+	console.log(this.request.body.userid + ', ' + this.request.body.password + ', ' + this.request.body.email + ', ' + this.request.body.name);
+
+	if (this.request.body.userid && this.request.body.password && this.request.body.email && this.request.body.name) {
+		user.addUser(this.request.body.userid, this.request.body.password, this.request.body.email, this.request.body.name, this.body, (err, profile, responseBody)  => {
+			if (err) {
+				console.log(err);
+				//this.status = 400;
+				responseBody = JSON.stringify({status: 400, result: 'failed to register'});
+			} else {
+				// itself.status = 200;
+				console.log('register ok');
+				responseBody = JSON.stringify({status: 200, result: 'register ok'});
+			}
+		});
+	} else {
+		// this.status = 400;
+		console.log('Please fill out all the fields');
+		this.body = JSON.stringify({status: 400, result: 'Please fill out all the fields'});
+	}
+};
+module.exports.list = function*() {
+	if (this.session.role == 1) {
+		let userList = user.getAllUser();
+		console.log(userList);
+		// this.status = 200;
+		this.body = JSON.stringify(userList);
+	} else {
+		console.log("permission error: " + this.session.role);
+		// this.status = 400;
+		this.body = JSON.stringify({status: 400, message: 'permission error' });
+	}
+};
+module.exports.modify = function*(userid) {
+	if (this.session.role == 1) {
+		user.updatePassword(this.request.body.userid, this.request.body.password, config.work);
+		// this.status = 200;
+		this.body = JSON.stringify({status: 200, message: 'succeeded to update'});
+	} else {
+		console.log("permission error: " + this.session.role);
+		// this.status = 400;
+		this.body = JSON.stringify({status: 400, message: 'permission error' });
+	}
+};
